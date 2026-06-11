@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Department {
+  dept_id          String       @id
+  dept_name        String       @unique
+  head_of_dept     String?
+  building         String?
+  budget           Float?
+  established_year Int?
+  students         Student[]
+  courses          Course[]
+}
+
+model Student {
+  student_id      String       @id
+  name            String
+  email           String       @unique
+  dept_id         String?
+  department      Department?  @relation(fields: [dept_id], references: [dept_id])
+  year            Int
+  gpa             Float?
+  date_of_birth   DateTime?
+  phone           String?
+  address         String?
+  enrollment_date DateTime     @default(now())
+  status          String       @default("Active")
+  enrollments     Enrollment[]
+}
+
+model Course {
+  course_id    String       @id
+  course_name  String
+  dept_id      String?
+  department   Department?  @relation(fields: [dept_id], references: [dept_id])
+  credits      Int
+  instructor   String?
+  semester     String?
+  max_capacity Int?         @default(60)
+  room_number  String?
+  enrollments  Enrollment[]
+}
+
+model Enrollment {
+  enrollment_id         Int      @id @default(autoincrement())
+  student_id            String
+  student               Student  @relation(fields: [student_id], references: [student_id])
+  course_id             String
+  course                Course   @relation(fields: [course_id], references: [course_id])
+  enrollment_date       DateTime @default(now())
+  grade                 String?
+  attendance_percentage Float?   @default(0.00)
+  status                String   @default("Enrolled")
+
+  @@unique([student_id, course_id])
+}
