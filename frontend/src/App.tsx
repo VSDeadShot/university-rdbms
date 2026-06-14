@@ -8,6 +8,8 @@ import { CoursesTab } from "./components/CoursesTab";
 import { EnrollmentsTab } from "./components/EnrollmentsTab";
 import { AnalyticsTab } from "./components/AnalyticsTab";
 import { GlobalSearch } from "./components/GlobalSearch";
+import { AuthPage } from "./components/AuthPage";
+import { useAuth } from "./context/AuthContext";
 import {
   GraduationCap,
   Users,
@@ -16,9 +18,11 @@ import {
   BookCheck,
   PieChart,
   Search,
+  LogOut,
 } from "lucide-react";
 
 function App() {
+  const { user, logout, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("students");
   const [refreshKey, setRefreshKey] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -53,6 +57,18 @@ function App() {
     { id: "enrollments", label: "Enrollments", icon: BookCheck },
     { id: "analytics", label: "Analytics", icon: PieChart },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthPage />;
+  }
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans selection:bg-indigo-500/30 pb-20">
@@ -97,12 +113,20 @@ function App() {
           <div className="flex items-center gap-6">
             <div className="hidden lg:block text-right">
               <div className="text-sm font-medium text-slate-200">
-                {new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 18 ? 'Good Afternoon' : 'Good Evening'}, Admin
+                {new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 18 ? 'Good Afternoon' : 'Good Evening'}, {user.email.split('@')[0]}
               </div>
               <div className="text-xs text-slate-400">
                 {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
               </div>
             </div>
+
+            <button
+              onClick={logout}
+              className="p-2.5 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-colors group border border-transparent hover:border-red-400/20"
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
 
             <button 
               onClick={() => setIsSearchOpen(true)}

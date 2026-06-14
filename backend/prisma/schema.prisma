@@ -32,6 +32,7 @@ model Student {
   enrollment_date DateTime     @default(now())
   status          String       @default("Active")
   enrollments     Enrollment[]
+  user            User?
 }
 
 model Course {
@@ -59,4 +60,13 @@ model Enrollment {
   status                String   @default("Enrolled")
 
   @@unique([student_id, course_id])
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String
+  role       String   @default("STUDENT") // ADMIN, INSTRUCTOR, STUDENT
+  student_id String?  @unique
+  student    Student? @relation(fields: [student_id], references: [student_id])
 }

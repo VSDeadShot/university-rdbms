@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -13,6 +15,53 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.send('University Management API is running (Node.js + Prisma)');
 });
+
+// ==================== AUTH ROUTES ====================
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-for-dev';
+
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password, role, student_id } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+    
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) return res.status(400).json({ error: "Email already registered" });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        role: role || 'STUDENT',
+        student_id: student_id || null
+      }
+    });
+
+    const token = jwt.sign({ id: newUser.id, role: newUser.role }, JWT_SECRET, { expiresIn: '24h' });
+    res.status(201).json({ success: true, token, user: { id: newUser.id, email: newUser.email, role: newUser.role } });
+  } catch (error) {
+    res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await prisma.user.findUnique({ where: { email } });
+    
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+    res.json({ success: true, token, user: { id: user.id, email: user.email, role: user.role } });
+  } catch (error) {
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
 
 // ==================== STUDENT ROUTES ====================
 
@@ -80,18 +129,19 @@ app.post('/api/students', async (req, res) => {
 app.put('/api/students/:id', async (req, res) => {
   try {
     const data = req.body;
+    const updateData: any = {};
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.dept_id !== undefined) updateData.dept_id = data.dept_id;
+    if (data.year !== undefined) updateData.year = parseInt(data.year);
+    if (data.gpa !== undefined) updateData.gpa = data.gpa ? parseFloat(data.gpa) : null;
+    if (data.phone !== undefined) updateData.phone = data.phone;
+    if (data.date_of_birth !== undefined) updateData.date_of_birth = data.date_of_birth ? new Date(data.date_of_birth) : null;
+    if (data.status !== undefined) updateData.status = data.status;
+
     const updatedStudent = await prisma.student.update({
       where: { student_id: req.params.id },
-      data: {
-        name: data.name,
-        email: data.email,
-        dept_id: data.dept_id,
-        year: parseInt(data.year),
-        gpa: data.gpa ? parseFloat(data.gpa) : null,
-        phone: data.phone || null,
-        date_of_birth: data.date_of_birth ? new Date(data.date_of_birth) : null,
-        status: data.status || 'Active'
-      }
+      data: updateData
     });
     res.json({ success: true, message: "Student updated successfully!", student: updatedStudent });
   } catch (error: any) {
@@ -164,17 +214,18 @@ app.post('/api/courses', async (req, res) => {
 app.put('/api/courses/:id', async (req, res) => {
   try {
     const data = req.body;
+    const updateData: any = {};
+    if (data.course_name !== undefined) updateData.course_name = data.course_name;
+    if (data.dept_id !== undefined) updateData.dept_id = data.dept_id;
+    if (data.credits !== undefined) updateData.credits = parseInt(data.credits);
+    if (data.instructor !== undefined) updateData.instructor = data.instructor;
+    if (data.semester !== undefined) updateData.semester = data.semester;
+    if (data.max_capacity !== undefined) updateData.max_capacity = parseInt(data.max_capacity);
+    if (data.room_number !== undefined) updateData.room_number = data.room_number;
+
     await prisma.course.update({
       where: { course_id: req.params.id },
-      data: {
-        course_name: data.course_name,
-        dept_id: data.dept_id,
-        credits: parseInt(data.credits),
-        instructor: data.instructor,
-        semester: data.semester,
-        max_capacity: parseInt(data.max_capacity) || 60,
-        room_number: data.room_number || null
-      }
+      data: updateData
     });
     res.json({ success: true, message: "Course updated successfully!" });
   } catch (error) {
@@ -224,13 +275,14 @@ app.post('/api/enrollments', async (req, res) => {
 app.put('/api/enrollments/:id', async (req, res) => {
   try {
     const data = req.body;
+    const updateData: any = {};
+    if (data.grade !== undefined) updateData.grade = data.grade;
+    if (data.attendance_percentage !== undefined) updateData.attendance_percentage = parseFloat(data.attendance_percentage);
+    if (data.status !== undefined) updateData.status = data.status;
+
     await prisma.enrollment.update({
       where: { enrollment_id: parseInt(req.params.id) },
-      data: {
-        grade: data.grade || null,
-        attendance_percentage: data.attendance_percentage ? parseFloat(data.attendance_percentage) : 0,
-        status: data.status || 'Enrolled'
-      }
+      data: updateData
     });
     res.json({ success: true, message: "Enrollment updated successfully!" });
   } catch (error) {
@@ -295,8 +347,12 @@ app.get('/api/statistics', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`=================================================`);
-  console.log(`🚀 MODERN BACKEND STARTED ON HTTP://LOCALHOST:${PORT}`);
-  console.log(`=================================================`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`=================================================`);
+    console.log(`🚀 MODERN BACKEND STARTED ON HTTP://LOCALHOST:${PORT}`);
+    console.log(`=================================================`);
+  });
+}
+
+export default app;
