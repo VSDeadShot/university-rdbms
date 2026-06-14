@@ -256,6 +256,37 @@ app.get('/api/enrollments', async (req, res) => {
 app.post('/api/enrollments', async (req, res) => {
   try {
     const data = req.body;
+    
+    // Fetch course details to check capacity and prerequisite
+    const course = await prisma.course.findUnique({
+      where: { course_id: data.course_id },
+      include: { enrollments: true }
+    });
+    
+    if (!course) return res.status(404).json({ error: "Course not found" });
+
+    // Check Capacity
+    const currentEnrollments = course.enrollments.filter(e => e.status !== 'Dropped').length;
+    const maxCapacity = course.max_capacity || 60;
+    if (currentEnrollments >= maxCapacity) {
+      return res.status(400).json({ error: `Course is full (Capacity: ${maxCapacity})` });
+    }
+
+    // Check Prerequisite
+    if (course.prerequisite_id) {
+      const prereqEnrollment = await prisma.enrollment.findFirst({
+        where: {
+          student_id: data.student_id,
+          course_id: course.prerequisite_id,
+          NOT: { status: 'Dropped' }
+        }
+      });
+      
+      if (!prereqEnrollment) {
+        return res.status(400).json({ error: `Prerequisite not met: Student must first take ${course.prerequisite_id}` });
+      }
+    }
+
     await prisma.enrollment.create({
       data: {
         student_id: data.student_id,

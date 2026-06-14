@@ -46,6 +46,10 @@ model Course {
   max_capacity Int?         @default(60)
   room_number  String?
   enrollments  Enrollment[]
+  
+  prerequisite_id String?
+  prerequisite    Course?  @relation("CoursePrerequisites", fields: [prerequisite_id], references: [course_id])
+  next_courses    Course[] @relation("CoursePrerequisites")
 }
 
 model Enrollment {

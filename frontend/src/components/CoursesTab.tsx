@@ -34,6 +34,7 @@ export function CoursesTab({ initialFilterQuery = '' }: CoursesTabProps) {
     semester: "",
     max_capacity: "60",
     room_number: "",
+    prerequisite_id: "",
   });
 
   const loadData = async () => {
@@ -111,6 +112,7 @@ export function CoursesTab({ initialFilterQuery = '' }: CoursesTabProps) {
       "Instructor",
       "Semester",
       "Capacity",
+      "Prerequisite"
     ];
     const csvRows = [headers.join(",")];
     filteredAndSorted.forEach((c) => {
@@ -122,6 +124,7 @@ export function CoursesTab({ initialFilterQuery = '' }: CoursesTabProps) {
         `"${c.instructor || "N/A"}"`,
         `"${c.semester || "N/A"}"`,
         c.max_capacity,
+        `"${c.prerequisite_id || ""}"`
       ];
       csvRows.push(row.join(","));
     });
@@ -163,6 +166,7 @@ export function CoursesTab({ initialFilterQuery = '' }: CoursesTabProps) {
         semester: "",
         max_capacity: "60",
         room_number: "",
+        prerequisite_id: "",
       });
       loadData();
     } catch (error: any) {
@@ -307,6 +311,17 @@ export function CoursesTab({ initialFilterQuery = '' }: CoursesTabProps) {
               className={inputClasses}
             />
           </div>
+          <div>
+            <label className={labelClasses}>Prerequisite Course ID</label>
+            <input
+              type="text"
+              name="prerequisite_id"
+              value={formData.prerequisite_id}
+              onChange={handleInputChange}
+              placeholder="e.g. CSE101"
+              className={inputClasses}
+            />
+          </div>
           <div className="md:col-span-3 flex justify-end mt-2">
             <button
               type="submit"
@@ -341,6 +356,7 @@ export function CoursesTab({ initialFilterQuery = '' }: CoursesTabProps) {
                   "Instructor",
                   "Semester",
                   "Capacity",
+                  "Prereq",
                 ].map((header) => {
                   const keyMap: Record<string, string> = {
                     "Course ID": "course_id",
@@ -350,6 +366,7 @@ export function CoursesTab({ initialFilterQuery = '' }: CoursesTabProps) {
                     Instructor: "instructor",
                     Semester: "semester",
                     Capacity: "max_capacity",
+                    Prereq: "prerequisite_id",
                   };
                   const sortKey = keyMap[header];
                   return (
@@ -426,6 +443,9 @@ export function CoursesTab({ initialFilterQuery = '' }: CoursesTabProps) {
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-400">
                         {c.max_capacity}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-400 font-mono">
+                        {c.prerequisite_id || "-"}
                       </td>
                     </tr>
                   ))}
