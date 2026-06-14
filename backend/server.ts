@@ -364,6 +364,14 @@ app.get('/api/statistics', async (req, res) => {
       enrolled_count: c._count.enrollments
     })).sort((a, b) => b.enrolled_count - a.enrolled_count).slice(0, 5);
 
+    const gpaDistribution = [
+      { range: '< 2.0', count: studentsWithGpa.filter(s => s.gpa! < 2.0).length },
+      { range: '2.0-2.5', count: studentsWithGpa.filter(s => s.gpa! >= 2.0 && s.gpa! < 2.5).length },
+      { range: '2.5-3.0', count: studentsWithGpa.filter(s => s.gpa! >= 2.5 && s.gpa! < 3.0).length },
+      { range: '3.0-3.5', count: studentsWithGpa.filter(s => s.gpa! >= 3.0 && s.gpa! < 3.5).length },
+      { range: '3.5-4.0', count: studentsWithGpa.filter(s => s.gpa! >= 3.5 && s.gpa! <= 4.0).length }
+    ];
+
     res.json({
       total_students: totalStudents,
       total_departments: totalDepartments,
@@ -371,7 +379,8 @@ app.get('/api/statistics', async (req, res) => {
       average_gpa: parseFloat(avgGpa.toFixed(2)),
       top_students: topStudents,
       department_distribution: departmentDistribution,
-      popular_courses: popularCourses
+      popular_courses: popularCourses,
+      gpa_distribution: gpaDistribution
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch statistics" });

@@ -8,8 +8,15 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  AreaChart,
+  Area,
 } from "recharts";
-import { Trophy, Star, PieChart as PieChartIcon } from "lucide-react";
+import { Trophy, Star, PieChart as PieChartIcon, TrendingUp, BarChart3 } from "lucide-react";
 
 const COLORS = [
   "#6366f1",
@@ -197,6 +204,72 @@ export function AnalyticsTab({ onDrillDown }: AnalyticsTabProps) {
               />
             </PieChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Additional Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <div className="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+          <h2 className="text-xl font-semibold mb-6 text-slate-100 flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-indigo-400" />
+            Most Popular Courses
+          </h2>
+          <div className="h-80 w-full relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.popular_courses} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="course_name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(51, 65, 85, 0.4)' }}
+                  contentStyle={{
+                    backgroundColor: "rgba(15, 23, 42, 0.9)",
+                    backdropFilter: "blur(8px)",
+                    borderColor: "rgba(51, 65, 85, 0.5)",
+                    borderRadius: "1rem",
+                    color: "#f8fafc",
+                  }}
+                />
+                <Bar dataKey="enrolled_count" fill="#6366f1" radius={[6, 6, 0, 0]}>
+                  {stats.popular_courses?.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+          <h2 className="text-xl font-semibold mb-6 text-slate-100 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-emerald-400" />
+            GPA Distribution (Bell Curve)
+          </h2>
+          <div className="h-80 w-full relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={stats.gpa_distribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorGpa" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="range" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "rgba(15, 23, 42, 0.9)",
+                    backdropFilter: "blur(8px)",
+                    borderColor: "rgba(51, 65, 85, 0.5)",
+                    borderRadius: "1rem",
+                    color: "#f8fafc",
+                  }}
+                />
+                <Area type="monotone" dataKey="count" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorGpa)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>
