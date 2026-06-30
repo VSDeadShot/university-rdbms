@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { apiRequest } from "../api";
 import { useAuth } from "../context/AuthContext";
+import { generateStudentTranscript } from "../utils/pdfGenerator";
 import toast from "react-hot-toast";
 import {
   BookCheck,
@@ -10,6 +11,7 @@ import {
   Download,
   ChevronUp,
   ChevronDown,
+  FileText,
 } from "lucide-react";
 
 interface EnrollmentsTabProps {
@@ -197,6 +199,25 @@ export function EnrollmentsTab({ initialFilterQuery = '' }: EnrollmentsTabProps)
             <Download className="w-4 h-4 text-emerald-400" />
             <span>Export CSV</span>
           </button>
+          
+          {user?.role === 'STUDENT' && user.student_id && (
+            <button
+              onClick={async () => {
+                const toastId = toast.loading("Generating transcript...");
+                try {
+                  const studentProfile = await apiRequest(`/students/${user.student_id}`);
+                  generateStudentTranscript(studentProfile);
+                  toast.success("Transcript downloaded!", { id: toastId });
+                } catch (e) {
+                  toast.error("Failed to generate transcript", { id: toastId });
+                }
+              }}
+              className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2.5 rounded-xl transition-colors border border-indigo-500 w-full sm:w-auto justify-center shadow-lg shadow-indigo-500/20"
+            >
+              <FileText className="w-4 h-4 text-white" />
+              <span>Download Transcript</span>
+            </button>
+          )}
         </div>
       </div>
 

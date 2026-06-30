@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { apiRequest } from "../api";
 import { useAuth } from "../context/AuthContext";
+import { generateStudentTranscript } from "../utils/pdfGenerator";
 import toast from "react-hot-toast";
 import {
   Trash2,
@@ -18,6 +19,7 @@ import {
   GraduationCap,
   ChevronLeft,
   ChevronRight,
+  FileText,
 } from "lucide-react";
 
 interface StudentsTabProps {
@@ -717,6 +719,13 @@ export function StudentsTab({ onDataChange, initialFilterQuery = '' }: StudentsT
                       >
                         {selectedProfile.status}
                       </span>
+                      <button
+                        onClick={() => generateStudentTranscript(selectedProfile)}
+                        className="ml-2 flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg transition-colors text-sm shadow-lg shadow-indigo-500/20"
+                      >
+                        <FileText className="w-4 h-4" />
+                        Download Transcript
+                      </button>
                     </div>
                     <p className="text-slate-400 flex flex-wrap items-center gap-3 text-sm">
                       <span className="font-mono bg-slate-900/50 px-2 py-0.5 rounded text-indigo-300 border border-slate-700/50">
