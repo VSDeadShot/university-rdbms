@@ -21,7 +21,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-for-dev';
 
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { email, password, role, student_id } = req.body;
+    const { email, password, role, student_id, instructor_name } = req.body;
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
@@ -35,12 +35,14 @@ app.post('/api/auth/register', async (req, res) => {
         email,
         password: hashedPassword,
         role: role || 'STUDENT',
-        student_id: student_id || null
+        student_id: student_id || null,
+        instructor_name: instructor_name || null
       }
     });
 
-    const token = jwt.sign({ id: newUser.id, role: newUser.role }, JWT_SECRET, { expiresIn: '24h' });
-    res.status(201).json({ success: true, token, user: { id: newUser.id, email: newUser.email, role: newUser.role } });
+    const payload = { id: newUser.id, role: newUser.role, student_id: newUser.student_id, instructor_name: newUser.instructor_name };
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+    res.status(201).json({ success: true, token, user: { ...payload, email: newUser.email } });
   } catch (error) {
     res.status(500).json({ error: "Registration failed" });
   }
@@ -55,8 +57,9 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
-    res.json({ success: true, token, user: { id: user.id, email: user.email, role: user.role } });
+    const payload = { id: user.id, role: user.role, student_id: user.student_id, instructor_name: user.instructor_name };
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+    res.json({ success: true, token, user: { ...payload, email: user.email } });
   } catch (error) {
     res.status(500).json({ error: "Login failed" });
   }
@@ -244,6 +247,7 @@ app.get('/api/enrollments', async (req, res) => {
       ...e,
       student_name: e.student?.name,
       course_name: e.course?.course_name,
+      instructor: e.course?.instructor,
       student: undefined,
       course: undefined
     }));

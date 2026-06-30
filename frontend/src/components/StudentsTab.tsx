@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { apiRequest } from "../api";
+import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import {
   Trash2,
@@ -28,6 +29,7 @@ export function StudentsTab({ onDataChange, initialFilterQuery = '' }: StudentsT
   const [students, setStudents] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   // UI States
   const [searchQuery, setSearchQuery] = useState(initialFilterQuery);
@@ -433,18 +435,20 @@ export function StudentsTab({ onDataChange, initialFilterQuery = '' }: StudentsT
             <Download className="w-4 h-4 text-emerald-400" />
             <span className="hidden sm:inline">Export</span>
           </button>
-          <button
-            onClick={openAddForm}
-            className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)]"
-          >
-            <UserPlus className="w-4 h-4" />
-            Add Student
-          </button>
+          {user?.role === 'ADMIN' && (
+            <button
+              onClick={openAddForm}
+              className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)]"
+            >
+              <UserPlus className="w-4 h-4" />
+              Add Student
+            </button>
+          )}
         </div>
       </div>
 
       {/* Bulk Action Bar */}
-      {selectedIds.length > 0 && (
+      {user?.role === 'ADMIN' && selectedIds.length > 0 && (
         <div className="bg-indigo-500/20 border border-indigo-500/30 rounded-xl p-3 px-6 flex flex-wrap items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-200">
           <span className="text-indigo-200 font-medium">
             <span className="text-white font-bold">{selectedIds.length}</span>{" "}

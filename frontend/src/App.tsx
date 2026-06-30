@@ -23,7 +23,11 @@ import {
 
 function App() {
   const { user, logout, isLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState("students");
+  const [activeTab, setActiveTab] = useState(() => {
+    if (user?.role === 'STUDENT') return 'courses';
+    if (user?.role === 'INSTRUCTOR') return 'courses';
+    return 'students';
+  });
   const [refreshKey, setRefreshKey] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [initialFilters, setInitialFilters] = useState<Record<string, string>>(
@@ -50,13 +54,15 @@ function App() {
     }
   };
 
-  const tabs = [
-    { id: "students", label: "Students", icon: Users },
-    { id: "departments", label: "Departments", icon: Building2 },
-    { id: "courses", label: "Courses", icon: BookOpen },
-    { id: "enrollments", label: "Enrollments", icon: BookCheck },
-    { id: "analytics", label: "Analytics", icon: PieChart },
+  const allTabs = [
+    { id: "students", label: "Students", icon: Users, roles: ['ADMIN', 'INSTRUCTOR'] },
+    { id: "departments", label: "Departments", icon: Building2, roles: ['ADMIN'] },
+    { id: "courses", label: "Courses", icon: BookOpen, roles: ['ADMIN', 'INSTRUCTOR', 'STUDENT'] },
+    { id: "enrollments", label: "Enrollments", icon: BookCheck, roles: ['ADMIN', 'INSTRUCTOR', 'STUDENT'] },
+    { id: "analytics", label: "Analytics", icon: PieChart, roles: ['ADMIN'] },
   ];
+
+  const tabs = allTabs.filter(tab => !user || tab.roles.includes(user.role));
 
   if (isLoading) {
     return (
@@ -115,8 +121,8 @@ function App() {
               <div className="text-sm font-medium text-slate-200">
                 {new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 18 ? 'Good Afternoon' : 'Good Evening'}, {user.email.split('@')[0]}
               </div>
-              <div className="text-xs text-slate-400">
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+              <div className="text-xs text-indigo-400 font-medium">
+                {user.role} Dashboard
               </div>
             </div>
 

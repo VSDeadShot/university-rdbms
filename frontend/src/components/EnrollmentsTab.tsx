@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { apiRequest } from "../api";
+import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import {
   BookCheck,
@@ -18,6 +19,7 @@ interface EnrollmentsTabProps {
 export function EnrollmentsTab({ initialFilterQuery = '' }: EnrollmentsTabProps) {
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState(initialFilterQuery);
   const [sortConfig, setSortConfig] = useState<{
@@ -51,6 +53,14 @@ export function EnrollmentsTab({ initialFilterQuery = '' }: EnrollmentsTabProps)
 
   const filteredAndSorted = useMemo(() => {
     let result = [...enrollments];
+    
+    // RBAC filtering
+    if (user?.role === 'STUDENT') {
+      result = result.filter(e => e.student_id === user.student_id);
+    } else if (user?.role === 'INSTRUCTOR') {
+      result = result.filter(e => e.instructor === user.instructor_name);
+    }
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -190,8 +200,9 @@ export function EnrollmentsTab({ initialFilterQuery = '' }: EnrollmentsTabProps)
         </div>
       </div>
 
-      <div className="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl border border-slate-700/50 shadow-xl">
-        <h2 className="text-xl font-semibold mb-6 text-slate-100 flex items-center gap-2">
+      {user?.role !== 'STUDENT' && (
+        <div className="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+          <h2 className="text-xl font-semibold mb-6 text-slate-100 flex items-center gap-2">
           <UserCheck className="w-5 h-5 text-amber-400" />
           Enroll Student in Course
         </h2>
@@ -269,9 +280,10 @@ export function EnrollmentsTab({ initialFilterQuery = '' }: EnrollmentsTabProps)
               <BookCheck className="w-4 h-4" />
               Add Enrollment
             </button>
-          </div>
-        </form>
-      </div>
+            </div>
+          </form>
+        </div>
+      )}
 
       <div className="bg-slate-800/40 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden">
         <div className="p-6 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/20">

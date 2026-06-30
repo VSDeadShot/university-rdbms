@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { apiRequest } from "../api";
+import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 import {
   BookPlus,
@@ -18,6 +19,7 @@ export function CoursesTab({ initialFilterQuery = '' }: CoursesTabProps) {
   const [courses, setCourses] = useState<any[]>([]);
   const [departments, setDepartments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   const [searchQuery, setSearchQuery] = useState(initialFilterQuery);
   const [sortConfig, setSortConfig] = useState<{
@@ -203,15 +205,16 @@ export function CoursesTab({ initialFilterQuery = '' }: CoursesTabProps) {
         </div>
       </div>
 
-      <div className="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl border border-slate-700/50 shadow-xl">
-        <h2 className="text-xl font-semibold mb-6 text-slate-100 flex items-center gap-2">
-          <BookPlus className="w-5 h-5 text-pink-400" />
-          Add New Course
-        </h2>
-        <form
-          onSubmit={handleSubmit}
-          className="grid grid-cols-1 md:grid-cols-3 gap-5"
-        >
+      {user?.role === 'ADMIN' && (
+        <div className="bg-slate-800/40 backdrop-blur-md p-6 rounded-2xl border border-slate-700/50 shadow-xl">
+          <h2 className="text-xl font-semibold mb-6 text-slate-100 flex items-center gap-2">
+            <BookPlus className="w-5 h-5 text-pink-400" />
+            Add New Course
+          </h2>
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-1 md:grid-cols-3 gap-5"
+          >
           <div>
             <label className={labelClasses}>Course ID*</label>
             <input
@@ -333,6 +336,7 @@ export function CoursesTab({ initialFilterQuery = '' }: CoursesTabProps) {
           </div>
         </form>
       </div>
+      )}
 
       <div className="bg-slate-800/40 backdrop-blur-md rounded-2xl border border-slate-700/50 shadow-xl overflow-hidden">
         <div className="p-6 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/20">

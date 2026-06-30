@@ -8,6 +8,9 @@ export function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('STUDENT');
+  const [studentId, setStudentId] = useState('');
+  const [instructorName, setInstructorName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
@@ -16,9 +19,16 @@ export function AuthPage() {
     setIsLoading(true);
     try {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
+      const payload: any = { email, password };
+      if (!isLogin) {
+        payload.role = role;
+        if (role === 'STUDENT') payload.student_id = studentId;
+        if (role === 'INSTRUCTOR') payload.instructor_name = instructorName;
+      }
+      
       const response = await apiRequest(endpoint, {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(payload),
       });
       login(response.user, response.token);
       toast.success(isLogin ? 'Welcome back!' : 'Account created successfully!');
@@ -44,7 +54,7 @@ export function AuthPage() {
             UniManage
           </h1>
           <p className="text-slate-400 mt-2 text-center text-sm">
-            {isLogin ? 'Sign in to access your dashboard' : 'Create a new admin account'}
+            {isLogin ? 'Sign in to access your dashboard' : 'Create a new account'}
           </p>
         </div>
 
@@ -71,6 +81,51 @@ export function AuthPage() {
               required
             />
           </div>
+          
+          {!isLogin && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5 ml-1">Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full bg-slate-900/50 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all appearance-none"
+                >
+                  <option value="STUDENT">Student</option>
+                  <option value="INSTRUCTOR">Instructor</option>
+                  <option value="ADMIN">Administrator</option>
+                </select>
+              </div>
+
+              {role === 'STUDENT' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5 ml-1">Student ID</label>
+                  <input
+                    type="text"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    className="w-full bg-slate-900/50 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600"
+                    placeholder="e.g. S101"
+                    required
+                  />
+                </div>
+              )}
+
+              {role === 'INSTRUCTOR' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-1.5 ml-1">Instructor Name</label>
+                  <input
+                    type="text"
+                    value={instructorName}
+                    onChange={(e) => setInstructorName(e.target.value)}
+                    className="w-full bg-slate-900/50 border border-slate-700 text-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-600"
+                    placeholder="e.g. Dr. Smith"
+                    required
+                  />
+                </div>
+              )}
+            </>
+          )}
           <button
             type="submit"
             disabled={isLoading}

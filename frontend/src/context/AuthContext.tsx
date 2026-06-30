@@ -4,6 +4,8 @@ interface User {
   id: string;
   email: string;
   role: string;
+  student_id?: string;
+  instructor_name?: string;
 }
 
 interface AuthContextType {

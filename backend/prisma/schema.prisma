@@ -70,7 +70,8 @@ model User {
   id         String   @id @default(uuid())
   email      String   @unique
   password   String
-  role       String   @default("STUDENT") // ADMIN, INSTRUCTOR, STUDENT
-  student_id String?  @unique
-  student    Student? @relation(fields: [student_id], references: [student_id])
+  role            String   @default("STUDENT") // ADMIN, INSTRUCTOR, STUDENT
+  student_id      String?  @unique
+  student         Student? @relation(fields: [student_id], references: [student_id])
+  instructor_name String?
 }
