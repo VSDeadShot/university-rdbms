@@ -84,6 +84,12 @@ describe('University API Integration Tests', () => {
     });
 
     it('should allow enrollment in advanced course after prerequisite is met', async () => {
+      // Mark prereq as Completed first
+      await prisma.enrollment.updateMany({
+        where: { student_id: testStudent1, course_id: prereqCourse },
+        data: { status: 'Completed' }
+      });
+
       const res = await request(app)
         .post('/api/enrollments')
         .send({ student_id: testStudent1, course_id: advancedCourse });

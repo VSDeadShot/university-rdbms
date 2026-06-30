@@ -282,12 +282,12 @@ app.post('/api/enrollments', async (req, res) => {
         where: {
           student_id: data.student_id,
           course_id: course.prerequisite_id,
-          NOT: { status: 'Dropped' }
+          status: 'Completed'
         }
       });
       
       if (!prereqEnrollment) {
-        return res.status(400).json({ error: `Prerequisite not met: Student must first take ${course.prerequisite_id}` });
+        return res.status(400).json({ error: `Prerequisite not met: Student must complete ${course.prerequisite_id} first.` });
       }
     }
 
