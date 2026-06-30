@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 export const generateStudentTranscript = (student: any) => {
   if (!student) return;
@@ -51,7 +51,7 @@ export const generateStudentTranscript = (student: any) => {
       tableRows.push(row);
     });
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 70,
