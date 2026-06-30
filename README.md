@@ -6,6 +6,7 @@ A modern, full-stack Relational Database Management System for Universities. Bui
 
 - **🔐 Role-Based Access Control (RBAC):** Distinct dashboards for Students, Instructors, and Admins. Ensure users only see and interact with data relevant to their role.
 - **📄 PDF Transcripts:** Instantly generate and download beautifully formatted official PDF report cards/transcripts.
+- **📧 Automated Email Notifications:** NodeMailer integration with Ethereal Email to send Welcome emails and instant Grade Update alerts.
 - **🔒 Secure Authentication:** JWT-based login and registration system with session persistence.
 - **📚 Course Management:** Enforces business rules like maximum capacities and course prerequisites dynamically.
 - **📊 Advanced Analytics:** Beautiful, interactive charts (Pie, Bar, Area) visualizing student distributions, GPA curves, and popular courses.

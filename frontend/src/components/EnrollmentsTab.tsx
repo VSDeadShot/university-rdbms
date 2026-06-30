@@ -12,6 +12,9 @@ import {
   ChevronUp,
   ChevronDown,
   FileText,
+  Edit2,
+  X,
+  Save,
 } from "lucide-react";
 
 interface EnrollmentsTabProps {
@@ -22,6 +25,13 @@ export function EnrollmentsTab({ initialFilterQuery = '' }: EnrollmentsTabProps)
   const [enrollments, setEnrollments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+
+  const [editingEnrollment, setEditingEnrollment] = useState<any>(null);
+  const [editFormData, setEditFormData] = useState({
+    grade: "",
+    attendance_percentage: "",
+    status: "",
+  });
 
   const [searchQuery, setSearchQuery] = useState(initialFilterQuery);
   const [sortConfig, setSortConfig] = useState<{
@@ -170,6 +180,23 @@ export function EnrollmentsTab({ initialFilterQuery = '' }: EnrollmentsTabProps)
       loadData();
     } catch (error: any) {
       toast.error(error.message || "Failed to add enrollment");
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEnrollment) return;
+    
+    try {
+      await apiRequest(`/enrollments/${editingEnrollment.enrollment_id}`, {
+        method: "PUT",
+        body: JSON.stringify(editFormData),
+      });
+      toast.success("Grade and enrollment updated successfully!");
+      setEditingEnrollment(null);
+      loadData();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update enrollment");
     }
   };
 
@@ -344,6 +371,7 @@ export function EnrollmentsTab({ initialFilterQuery = '' }: EnrollmentsTabProps)
                     );
                   },
                 )}
+                {user?.role !== 'STUDENT' && <th className="px-6 py-4" />}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/50">
@@ -431,6 +459,24 @@ export function EnrollmentsTab({ initialFilterQuery = '' }: EnrollmentsTabProps)
                           {e.status}
                         </span>
                       </td>
+                      {user?.role !== 'STUDENT' && (
+                        <td className="px-6 py-4 text-sm">
+                          <button
+                            onClick={() => {
+                              setEditingEnrollment(e);
+                              setEditFormData({
+                                grade: e.grade || "",
+                                attendance_percentage: e.attendance_percentage.toString(),
+                                status: e.status,
+                              });
+                            }}
+                            className="p-1.5 bg-slate-700/50 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-400 rounded-lg transition-colors border border-slate-600/50 hover:border-indigo-500/30"
+                            title="Edit Grade & Status"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                   {filteredAndSorted.length === 0 && (
@@ -452,6 +498,83 @@ export function EnrollmentsTab({ initialFilterQuery = '' }: EnrollmentsTabProps)
           </table>
         </div>
       </div>
+      
+      {/* Edit Grade Modal */}
+      {editingEnrollment && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+              <div>
+                <h3 className="text-xl font-bold text-white">Edit Enrollment</h3>
+                <p className="text-sm text-slate-400 mt-1">
+                  {editingEnrollment.student_name} - {editingEnrollment.course_name}
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingEnrollment(null)}
+                className="text-slate-400 hover:text-white p-2 hover:bg-slate-700 rounded-xl transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-5">
+              <div>
+                <label className={labelClasses}>Grade (A, B+, etc.)</label>
+                <input
+                  type="text"
+                  value={editFormData.grade}
+                  onChange={(e) => setEditFormData({ ...editFormData, grade: e.target.value })}
+                  placeholder="e.g. A"
+                  className={inputClasses}
+                />
+              </div>
+              <div>
+                <label className={labelClasses}>Attendance %</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={editFormData.attendance_percentage}
+                  onChange={(e) => setEditFormData({ ...editFormData, attendance_percentage: e.target.value })}
+                  className={inputClasses}
+                />
+              </div>
+              <div>
+                <label className={labelClasses}>Status</label>
+                <select
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                  className={inputClasses}
+                >
+                  <option value="Enrolled">Enrolled</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Dropped">Dropped</option>
+                </select>
+              </div>
+              
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingEnrollment(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 font-medium"
+                >
+                  <Save className="w-4 h-4" />
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default EnrollmentsTab;

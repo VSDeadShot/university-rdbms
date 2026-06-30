@@ -3,6 +3,7 @@ import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { sendWelcomeEmail, sendGradeUpdateEmail } from './emailService.ts';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -39,6 +40,9 @@ app.post('/api/auth/register', async (req, res) => {
         instructor_name: instructor_name || null
       }
     });
+
+    // Trigger welcome email notification asynchronously
+    sendWelcomeEmail(newUser.email, newUser.email).catch(err => console.error(err));
 
     const payload = { id: newUser.id, role: newUser.role, student_id: newUser.student_id, instructor_name: newUser.instructor_name };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
@@ -310,15 +314,31 @@ app.post('/api/enrollments', async (req, res) => {
 app.put('/api/enrollments/:id', async (req, res) => {
   try {
     const data = req.body;
+    const enrollmentId = parseInt(req.params.id);
+    
+    // Get existing enrollment to check if grade changed
+    const existing = await prisma.enrollment.findUnique({
+      where: { enrollment_id: enrollmentId },
+      include: { student: true, course: true }
+    });
+    
+    if (!existing) return res.status(404).json({ error: "Enrollment not found" });
+
     const updateData: any = {};
     if (data.grade !== undefined) updateData.grade = data.grade;
     if (data.attendance_percentage !== undefined) updateData.attendance_percentage = parseFloat(data.attendance_percentage);
     if (data.status !== undefined) updateData.status = data.status;
 
-    await prisma.enrollment.update({
-      where: { enrollment_id: parseInt(req.params.id) },
+    const updated = await prisma.enrollment.update({
+      where: { enrollment_id: enrollmentId },
       data: updateData
     });
+    
+    // If grade was updated and it's different from the old grade
+    if (data.grade && data.grade !== existing.grade) {
+      sendGradeUpdateEmail(existing.student.email, existing.student.name, existing.course.course_name, data.grade).catch(err => console.error(err));
+    }
+
     res.json({ success: true, message: "Enrollment updated successfully!" });
   } catch (error) {
     res.status(500).json({ error: "Failed to update enrollment" });
