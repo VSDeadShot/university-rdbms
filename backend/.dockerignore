@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.git
+.gitignore
+*.log
+prisma/*.db
+prisma/*.db-journal
