@@ -19,6 +19,8 @@ import {
   PieChart,
   Search,
   LogOut,
+  Moon,
+  Sun,
 } from "lucide-react";
 
 function App() {
@@ -30,9 +32,22 @@ function App() {
   });
   const [refreshKey, setRefreshKey] = useState(0);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isLightMode, setIsLightMode] = useState(() => {
+    return localStorage.getItem('theme') === 'light';
+  });
   const [initialFilters, setInitialFilters] = useState<Record<string, string>>(
     {},
   );
+
+  useEffect(() => {
+    if (isLightMode) {
+      document.body.classList.add('light-mode');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.body.classList.remove('light-mode');
+      localStorage.setItem('theme', 'dark');
+    }
+  }, [isLightMode]);
 
   // Listen for the custom event to open search
   useEffect(() => {
@@ -66,7 +81,7 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full" />
       </div>
     );
@@ -77,7 +92,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans selection:bg-indigo-500/30 pb-20">
+    <div className="min-h-screen bg-slate-900 text-slate-200 font-sans selection:bg-indigo-500/30 pb-20 transition-colors duration-300">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -128,10 +143,18 @@ function App() {
 
             <button
               onClick={logout}
-              className="p-2.5 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-colors group border border-transparent hover:border-red-400/20"
+              className="p-2.5 text-slate-400 hover:text-rose-400 hover:bg-rose-400/10 rounded-xl transition-colors group border border-transparent hover:border-rose-400/20"
               title="Logout"
             >
               <LogOut className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={() => setIsLightMode(!isLightMode)}
+              className="p-2.5 text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-xl transition-colors group border border-transparent hover:border-amber-400/20"
+              title="Toggle Theme"
+            >
+              {isLightMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
             </button>
 
             <button 

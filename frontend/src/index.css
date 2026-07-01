@@ -2,22 +2,52 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-gray-900 text-gray-100 font-sans;
+@layer base {
+  :root {
+    --color-slate-50: 248 250 252;
+    --color-slate-100: 241 245 249;
+    --color-slate-200: 226 232 240;
+    --color-slate-300: 203 213 225;
+    --color-slate-400: 148 163 184;
+    --color-slate-500: 100 116 139;
+    --color-slate-600: 71 85 105;
+    --color-slate-700: 51 65 85;
+    --color-slate-800: 30 41 59;
+    --color-slate-900: 15 23 42;
+    --color-slate-950: 2 6 23;
+  }
+
+  .light-mode {
+    --color-slate-950: 248 250 252;
+    --color-slate-900: 241 245 249;
+    --color-slate-800: 255 255 255;
+    --color-slate-700: 226 232 240;
+    --color-slate-600: 203 213 225;
+    --color-slate-500: 148 163 184;
+    --color-slate-400: 100 116 139;
+    --color-slate-300: 71 85 105;
+    --color-slate-200: 51 65 85;
+    --color-slate-100: 30 41 59;
+    --color-slate-50: 15 23 42;
+  }
 }
 
-/* Custom dark scrollbar */
+body {
+  @apply bg-slate-900 text-slate-100 font-sans transition-colors duration-300;
+}
+
+/* Custom dark/light scrollbar based on theme */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #2d3748;
+  background: rgba(var(--color-slate-800), 1);
 }
 ::-webkit-scrollbar-thumb {
-  background: #4a5568;
+  background: rgba(var(--color-slate-600), 1);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #718096;
+  background: rgba(var(--color-slate-500), 1);
 }

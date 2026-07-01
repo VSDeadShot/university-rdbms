@@ -40,7 +40,7 @@ export function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-200 flex items-center justify-center p-4 selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-slate-900 text-slate-200 flex items-center justify-center p-4 selection:bg-indigo-500/30">
       <div className="w-full max-w-md bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
         {/* Decorative background glow */}
         <div className="absolute -top-32 -right-32 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
