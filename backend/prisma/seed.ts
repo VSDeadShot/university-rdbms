@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -70,6 +71,19 @@ async function main() {
   for (const enrollment of enrollments) {
     await prisma.enrollment.create({ data: enrollment });
   }
+
+  // Public registration no longer allows self-assigning the ADMIN role
+  // (see backend/server.ts POST /api/auth/register), so seed one here —
+  // this is the only way to obtain an Admin account for local dev/demo use.
+  const adminPassword = 'Admin@123';
+  await prisma.user.create({
+    data: {
+      email: 'admin@university.edu',
+      password: await bcrypt.hash(adminPassword, 10),
+      role: 'ADMIN',
+    },
+  });
+  console.log(`Seeded Admin login -> email: admin@university.edu, password: ${adminPassword}`);
 
   console.log('Database seeded successfully!');
 }

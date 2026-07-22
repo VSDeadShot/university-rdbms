@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, X, Users, BookOpen, Building2 } from "lucide-react";
 import { apiRequest } from "../api";
+import { useAuth } from "../context/AuthContext";
 
 interface GlobalSearchProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface GlobalSearchProps {
 }
 
 export function GlobalSearch({ isOpen, onClose, onNavigate }: GlobalSearchProps) {
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,8 +89,13 @@ export function GlobalSearch({ isOpen, onClose, onNavigate }: GlobalSearchProps)
     const timer = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const [students, courses, departments] = await Promise.all([
-          apiRequest('/students'),
+        // GET /api/students is Admin/Instructor-only server-side; a Student
+        // token would get a 403 here, so skip that category entirely for them
+        // rather than letting it fail the whole search.
+        const canSearchStudents = user?.role === 'ADMIN' || user?.role === 'INSTRUCTOR';
+
+        const [studentsResult, coursesResult, departmentsResult] = await Promise.allSettled([
+          canSearchStudents ? apiRequest('/students') : Promise.resolve([]),
           apiRequest('/courses'),
           apiRequest('/departments')
         ]);
@@ -96,23 +103,29 @@ export function GlobalSearch({ isOpen, onClose, onNavigate }: GlobalSearchProps)
         const q = query.toLowerCase();
         const searchResults: any[] = [];
 
-        students.forEach((s: any) => {
-          if (s.name.toLowerCase().includes(q) || s.student_id.toLowerCase().includes(q)) {
-            searchResults.push({ type: 'student', title: s.name, subtitle: s.student_id, icon: Users, tab: 'students' });
-          }
-        });
+        if (studentsResult.status === 'fulfilled') {
+          studentsResult.value.forEach((s: any) => {
+            if (s.name.toLowerCase().includes(q) || s.student_id.toLowerCase().includes(q)) {
+              searchResults.push({ type: 'student', title: s.name, subtitle: s.student_id, icon: Users, tab: 'students' });
+            }
+          });
+        }
 
-        courses.forEach((c: any) => {
-          if (c.course_name.toLowerCase().includes(q) || c.course_id.toLowerCase().includes(q)) {
-            searchResults.push({ type: 'course', title: c.course_name, subtitle: c.course_id, icon: BookOpen, tab: 'courses' });
-          }
-        });
+        if (coursesResult.status === 'fulfilled') {
+          coursesResult.value.forEach((c: any) => {
+            if (c.course_name.toLowerCase().includes(q) || c.course_id.toLowerCase().includes(q)) {
+              searchResults.push({ type: 'course', title: c.course_name, subtitle: c.course_id, icon: BookOpen, tab: 'courses' });
+            }
+          });
+        }
 
-        departments.forEach((d: any) => {
-          if (d.dept_name.toLowerCase().includes(q) || d.dept_id.toLowerCase().includes(q)) {
-            searchResults.push({ type: 'department', title: d.dept_name, subtitle: `Head: ${d.head_of_dept || 'N/A'}`, icon: Building2, tab: 'departments' });
-          }
-        });
+        if (departmentsResult.status === 'fulfilled') {
+          departmentsResult.value.forEach((d: any) => {
+            if (d.dept_name.toLowerCase().includes(q) || d.dept_id.toLowerCase().includes(q)) {
+              searchResults.push({ type: 'department', title: d.dept_name, subtitle: `Head: ${d.head_of_dept || 'N/A'}`, icon: Building2, tab: 'departments' });
+            }
+          });
+        }
 
         setResults(searchResults.slice(0, 10));
         setSelectedIndex(0); // Reset selection on new results

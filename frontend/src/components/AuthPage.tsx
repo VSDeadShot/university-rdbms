@@ -93,7 +93,6 @@ export function AuthPage() {
                 >
                   <option value="STUDENT">Student</option>
                   <option value="INSTRUCTOR">Instructor</option>
-                  <option value="ADMIN">Administrator</option>
                 </select>
               </div>
 

@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { sendWelcomeEmail, sendGradeUpdateEmail } from './emailService.ts';
+import { authenticateToken, authorizeRoles, authorizeSelfOrRoles } from './authMiddleware.ts';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -26,7 +27,14 @@ app.post('/api/auth/register', async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
-    
+
+    // Public self-registration may only create STUDENT or INSTRUCTOR accounts.
+    // ADMIN accounts are seeded/created by an existing admin, never self-assigned.
+    const requestedRole = role || 'STUDENT';
+    if (!['STUDENT', 'INSTRUCTOR'].includes(requestedRole)) {
+      return res.status(400).json({ error: "Invalid role. Public registration allows STUDENT or INSTRUCTOR only." });
+    }
+
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) return res.status(400).json({ error: "Email already registered" });
 
@@ -35,7 +43,7 @@ app.post('/api/auth/register', async (req, res) => {
       data: {
         email,
         password: hashedPassword,
-        role: role || 'STUDENT',
+        role: requestedRole,
         student_id: student_id || null,
         instructor_name: instructor_name || null
       }
@@ -72,7 +80,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 // ==================== STUDENT ROUTES ====================
 
-app.get('/api/students', async (req, res) => {
+app.get('/api/students', authenticateToken, authorizeRoles('ADMIN', 'INSTRUCTOR'), async (req, res) => {
   try {
     const students = await prisma.student.findMany({
       include: { department: true },
@@ -89,7 +97,7 @@ app.get('/api/students', async (req, res) => {
   }
 });
 
-app.get('/api/students/:id', async (req, res) => {
+app.get('/api/students/:id', authenticateToken, authorizeSelfOrRoles('ADMIN', 'INSTRUCTOR'), async (req, res) => {
   try {
     const student = await prisma.student.findUnique({
       where: { student_id: req.params.id },
@@ -107,7 +115,7 @@ app.get('/api/students/:id', async (req, res) => {
   }
 });
 
-app.post('/api/students', async (req, res) => {
+app.post('/api/students', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
   try {
     const data = req.body;
     if (!data.student_id || !data.name || !data.email || !data.dept_id || !data.year) {
@@ -133,7 +141,7 @@ app.post('/api/students', async (req, res) => {
   }
 });
 
-app.put('/api/students/:id', async (req, res) => {
+app.put('/api/students/:id', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
   try {
     const data = req.body;
     const updateData: any = {};
@@ -159,7 +167,7 @@ app.put('/api/students/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/students/:id', async (req, res) => {
+app.delete('/api/students/:id', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
   try {
     await prisma.enrollment.deleteMany({ where: { student_id: req.params.id } });
     await prisma.student.delete({ where: { student_id: req.params.id } });
@@ -170,7 +178,9 @@ app.delete('/api/students/:id', async (req, res) => {
 });
 
 // ==================== DEPARTMENT ROUTES ====================
-app.get('/api/departments', async (req, res) => {
+// Reference data needed by every role (dropdowns, search, course listings) —
+// any authenticated user may read it; only mutation would be Admin-only.
+app.get('/api/departments', authenticateToken, async (req, res) => {
   try {
     const departments = await prisma.department.findMany({ orderBy: { dept_name: 'asc' } });
     res.json(departments);
@@ -180,7 +190,7 @@ app.get('/api/departments', async (req, res) => {
 });
 
 // ==================== COURSE ROUTES ====================
-app.get('/api/courses', async (req, res) => {
+app.get('/api/courses', authenticateToken, async (req, res) => {
   try {
     const courses = await prisma.course.findMany({
       include: { department: true },
@@ -197,7 +207,7 @@ app.get('/api/courses', async (req, res) => {
   }
 });
 
-app.post('/api/courses', async (req, res) => {
+app.post('/api/courses', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
   try {
     const data = req.body;
     await prisma.course.create({
@@ -218,7 +228,7 @@ app.post('/api/courses', async (req, res) => {
   }
 });
 
-app.put('/api/courses/:id', async (req, res) => {
+app.put('/api/courses/:id', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
   try {
     const data = req.body;
     const updateData: any = {};
@@ -241,7 +251,7 @@ app.put('/api/courses/:id', async (req, res) => {
 });
 
 // ==================== ENROLLMENT ROUTES ====================
-app.get('/api/enrollments', async (req, res) => {
+app.get('/api/enrollments', authenticateToken, async (req, res) => {
   try {
     const enrollments = await prisma.enrollment.findMany({
       include: { student: true, course: true },
@@ -261,7 +271,7 @@ app.get('/api/enrollments', async (req, res) => {
   }
 });
 
-app.post('/api/enrollments', async (req, res) => {
+app.post('/api/enrollments', authenticateToken, authorizeRoles('ADMIN', 'INSTRUCTOR'), async (req, res) => {
   try {
     const data = req.body;
     
@@ -311,7 +321,7 @@ app.post('/api/enrollments', async (req, res) => {
   }
 });
 
-app.put('/api/enrollments/:id', async (req, res) => {
+app.put('/api/enrollments/:id', authenticateToken, authorizeRoles('ADMIN', 'INSTRUCTOR'), async (req, res) => {
   try {
     const data = req.body;
     const enrollmentId = parseInt(req.params.id);
@@ -346,7 +356,7 @@ app.put('/api/enrollments/:id', async (req, res) => {
 });
 
 // ==================== STATISTICS ROUTES ====================
-app.get('/api/statistics', async (req, res) => {
+app.get('/api/statistics', authenticateToken, async (req, res) => {
   try {
     const totalStudents = await prisma.student.count({ where: { status: 'Active' } });
     const totalDepartments = await prisma.department.count();
